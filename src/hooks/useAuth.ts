@@ -45,6 +45,10 @@ export const useAuth = () => {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    if (!error) {
+      // Redirect to main frontend homepage
+      window.location.href = 'https://safeguardsecurities.us';
+    }
     return { error };
   };
 
