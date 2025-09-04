@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
@@ -47,12 +47,28 @@ export const testFirebaseConnection = async (): Promise<boolean> => {
   try {
     console.log('🔍 Testing Firebase connection...');
     
-    // Test connection by checking auth state
+    // Test Auth connection
     return new Promise((resolve) => {
-      const unsubscribe = auth.onAuthStateChanged(() => {
+      const unsubscribe = auth.onAuthStateChanged(async () => {
         console.log('✅ Firebase Auth connection successful');
         unsubscribe();
-        resolve(true);
+        
+        // Test Firestore connection with a dummy read
+        try {
+          const testDocRef = doc(db, 'connection-test', 'test');
+          await getDoc(testDocRef);
+          console.log('✅ Firebase Firestore connection successful');
+          resolve(true);
+        } catch (firestoreError: any) {
+          if (firestoreError.code === 'permission-denied') {
+            // Permission denied is fine - it means Firestore is online
+            console.log('✅ Firebase Firestore connection successful (permission denied is expected)');
+            resolve(true);
+          } else {
+            console.error('❌ Firestore connection failed:', firestoreError);
+            resolve(false);
+          }
+        }
       });
       
       // Timeout after 10 seconds
