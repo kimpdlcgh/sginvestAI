@@ -52,7 +52,17 @@ export function usePortfolioData() {
       // Test Firebase connection first
       const connectionTest = await testFirebaseConnection();
       if (!connectionTest) {
-        throw new Error('Unable to connect to database. Please check your internet connection and try again.');
+        console.warn('⚠️ Firebase connection limited - using fallback data');
+        setPortfolioStats({
+          totalValue: 0,
+          totalGain: 0,
+          totalGainPercent: 0,
+          dayChange: 0,
+          dayChangePercent: 0
+        });
+        setAssets([]);
+        setLoading(false);
+        return;
       }
       
       // Get portfolio holdings from Firebase

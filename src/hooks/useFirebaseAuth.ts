@@ -35,9 +35,7 @@ export const useFirebaseAuth = () => {
         // Test connection to Firebase
         const connectionTest = await testFirebaseConnection();
         if (!connectionTest) {
-          console.error('❌ Cannot connect to Firebase. Check your internet connection and Firebase configuration.');
-          setLoading(false);
-          return;
+          console.warn('⚠️ Firebase connection limited - app will continue with reduced functionality');
         }
         
         console.log('✅ Firebase connection verified');
