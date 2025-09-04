@@ -300,6 +300,33 @@ class MarketDataService {
     };
     return names[symbol] || symbol;
   }
+
+  getAPIStatus() {
+    const finnhubKey = import.meta.env.VITE_FINNHUB_API_KEY;
+    const alphaVantageKey = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY;
+
+    // Reset rate limits if enough time has passed
+    if (Date.now() > this.rateLimitReached.resetTime) {
+      this.rateLimitReached.finnhub = false;
+      this.rateLimitReached.alphaVantage = false;
+    }
+
+    return {
+      finnhub: {
+        configured: !!(finnhubKey && finnhubKey !== 'your_finnhub_api_key'),
+        rateLimited: this.rateLimitReached.finnhub,
+        status: (!finnhubKey || finnhubKey === 'your_finnhub_api_key') ? 'not_configured' :
+                this.rateLimitReached.finnhub ? 'rate_limited' : 'active'
+      },
+      alphaVantage: {
+        configured: !!(alphaVantageKey && alphaVantageKey !== 'your_alpha_vantage_api_key'),
+        rateLimited: this.rateLimitReached.alphaVantage,
+        status: (!alphaVantageKey || alphaVantageKey === 'your_alpha_vantage_api_key') ? 'not_configured' :
+                this.rateLimitReached.alphaVantage ? 'rate_limited' : 'active'
+      },
+      resetTime: this.rateLimitReached.resetTime
+    };
+  }
 }
 
 export const marketDataService = new MarketDataService();
