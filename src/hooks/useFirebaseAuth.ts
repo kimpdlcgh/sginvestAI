@@ -10,7 +10,7 @@ import {
   sendEmailVerification,
   connectAuthEmulator
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, testFirebaseConnection } from '../lib/firebase';
 import { userService } from '../services/userService';
 
 export const useFirebaseAuth = () => {
