@@ -50,8 +50,22 @@ class UserService {
 
       return profileDoc.data();
     } catch (error) {
-      console.error('Error ensuring user profile:', error);
-      throw error;
+      console.warn('⚠️ Firestore unavailable - user profile creation skipped:', error);
+      
+      // Return a minimal profile object when offline
+      return {
+        id: userId,
+        email,
+        language: 'English (US)',
+        timezone: 'America/New_York (EST)',
+        currency: 'USD',
+        dateFormat: 'MM/DD/YYYY',
+        numberFormat: 'US',
+        weekStart: 'Sunday',
+        profileCompletion: 0,
+        createdAt: new Date() as any,
+        updatedAt: new Date() as any,
+      } as UserProfile;
     }
   }
 

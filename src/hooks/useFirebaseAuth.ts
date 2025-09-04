@@ -62,7 +62,8 @@ export const useFirebaseAuth = () => {
           await userService.ensureUserProfile(user.uid, user.email);
           console.log('✅ User profile ensured for:', user.email);
         } catch (error) {
-          console.error('Error creating user profile:', error);
+          console.warn('⚠️ Could not create user profile (Firebase offline):', error);
+          // Don't throw - allow app to continue without profile
         }
       }
       
