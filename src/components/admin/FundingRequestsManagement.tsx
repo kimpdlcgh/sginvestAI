@@ -17,9 +17,7 @@ import {
   Loader2,
   Edit
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { adminService } from '../../services/adminService';
-import { walletService } from '../../services/walletService';
+import { firebaseAdminService as adminService } from '../../services/firebaseAdminService';
 import { FundingRequest } from '../../types/admin';
 
 interface FundingRequestsManagementProps {
@@ -60,15 +58,10 @@ export const FundingRequestsManagement: React.FC<FundingRequestsManagementProps>
   const handleUpdateStatus = async (requestId: string, newStatus: 'approved' | 'rejected' | 'completed') => {
     setProcessingRequest(requestId);
     try {
-      const { error } = await supabase
-        .from('funding_requests')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
+      const result = await adminService.updateFundingRequest(requestId, newStatus);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update funding request');
+      }
 
       // Refresh the list
       loadFundingRequests();

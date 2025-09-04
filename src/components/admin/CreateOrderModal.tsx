@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
-import { adminService } from '../../services/adminService';
+import { firebaseAdminService as adminService } from '../../services/firebaseAdminService';
 import { marketDataService } from '../../services/marketData';
 import { User } from '../../types/admin';
 
