@@ -16,7 +16,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { User } from '../../types/admin';
-import { adminService } from '../../services/adminService';
+import { firebaseAdminService as adminService } from '../../services/firebaseAdminService';
 
 interface UserManagementProps {
   onRefresh: () => void;
