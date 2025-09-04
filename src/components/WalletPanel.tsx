@@ -12,15 +12,15 @@ import {
   Loader2,
   Activity
 } from 'lucide-react';
-import { walletService } from '../services/walletService';
-import { useAuth } from '../hooks/useAuth';
+import { firebaseWalletService } from '../services/firebaseWalletService';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
 
 interface WalletPanelProps {
   onRefresh?: () => void;
 }
 
 export const WalletPanel: React.FC<WalletPanelProps> = ({ onRefresh }) => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const [wallet, setWallet] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export const WalletPanel: React.FC<WalletPanelProps> = ({ onRefresh }) => {
     if (user) {
       loadWalletData();
     }
-  }, [user]);
+  }, [user?.uid]);
 
   const loadWalletData = async () => {
     if (!user) return;
@@ -40,14 +40,14 @@ export const WalletPanel: React.FC<WalletPanelProps> = ({ onRefresh }) => {
     setError('');
     
     try {
-      // Get wallet
-      const userWallet = await walletService.getUserWallet(user.id);
+      // Get Firebase wallet
+      const userWallet = await firebaseWalletService.getUserWallet(user.uid);
       setWallet(userWallet);
       
       // If wallet exists, get transactions
       if (userWallet) {
         setTransactionsLoading(true);
-        const walletTransactions = await walletService.getWalletTransactions(userWallet.id);
+        const walletTransactions = await firebaseWalletService.getWalletTransactions(user.uid);
         setTransactions(walletTransactions);
         setTransactionsLoading(false);
       }

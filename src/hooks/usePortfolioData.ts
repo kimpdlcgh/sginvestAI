@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { portfolioService } from '../services/portfolioService';
+import { firebasePortfolioService } from '../services/firebasePortfolioService';
 import { marketDataService } from '../services/marketData';
-import { useAuth } from './useAuth';
-import { testSupabaseConnection } from '../lib/supabase';
+import { useFirebaseAuth } from './useFirebaseAuth';
+import { testFirebaseConnection } from '../lib/firebase';
 
 interface Asset {
   id: string;
@@ -26,14 +26,14 @@ interface PortfolioStats {
 }
 
 export function usePortfolioData() {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [portfolioStats, setPortfolioStats] = useState<PortfolioStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadPortfolioData = async () => {
-    if (!user?.id) {
+    if (!user?.uid) {
       setLoading(false);
       setPortfolioStats({
         totalValue: 0,
@@ -49,14 +49,14 @@ export function usePortfolioData() {
     try {
       setError(null);
       
-      // Test Supabase connection first
-      const connectionTest = await testSupabaseConnection();
+      // Test Firebase connection first
+      const connectionTest = await testFirebaseConnection();
       if (!connectionTest) {
         throw new Error('Unable to connect to database. Please check your internet connection and try again.');
       }
       
-      // Get portfolio holdings from database
-      const holdings = await portfolioService.getUserPortfolio(user.id);
+      // Get portfolio holdings from Firebase
+      const holdings = await firebasePortfolioService.getUserPortfolio(user.uid);
       
       if (!holdings || holdings.length === 0) {
         setPortfolioStats({
@@ -147,7 +147,7 @@ export function usePortfolioData() {
       
       if (err instanceof Error) {
         if (err.message.includes('fetch')) {
-          errorMessage = 'Connection failed. Please check your internet connection and Supabase configuration.';
+          errorMessage = 'Connection failed. Please check your internet connection and Firebase configuration.';
         } else if (err.message.includes('database')) {
           errorMessage = err.message;
         } else if (err.message.includes('JWT')) {
@@ -177,7 +177,7 @@ export function usePortfolioData() {
     // Refresh portfolio data every 5 minutes
     const interval = setInterval(loadPortfolioData, 300000);
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [user?.uid]);
 
   const refreshPortfolio = () => {
     setLoading(true);

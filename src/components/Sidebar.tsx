@@ -13,7 +13,7 @@ import {
   Shield,
   Wallet
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
 import { usePortfolioData } from '../hooks/usePortfolioData';
 import logo1 from '../assets/logo1.png';
 
@@ -24,7 +24,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useFirebaseAuth();
   const { portfolioStats } = usePortfolioData();
 
   // Check if user is admin (in a real app, this would be based on user roles)

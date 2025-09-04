@@ -1,29 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Filter, Download, TrendingUp, TrendingDown, Search, Loader2 } from 'lucide-react';
-import { tradeService } from '../services/tradeService';
-import { useAuth } from '../hooks/useAuth';
+import { firebaseTradeService } from '../services/firebaseTradeService';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
 
-interface Trade {
-  id: string;
-  user_id: string;
-  symbol: string;
-  name: string;
-  type: 'buy' | 'sell';
-  order_type: 'market' | 'limit' | 'stop';
-  quantity: number;
-  price: number;
-  total: number;
-  status: 'executed' | 'pending' | 'cancelled';
-  created_at: string;
-  updated_at: string;
-}
+import { Trade } from '../types/firestore';
 
 interface TradeHistoryProps {
   refreshTrigger?: number;
 }
 
 export const TradeHistory: React.FC<TradeHistoryProps> = ({ refreshTrigger }) => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'buy' | 'sell'>('all');
@@ -36,14 +23,14 @@ export const TradeHistory: React.FC<TradeHistoryProps> = ({ refreshTrigger }) =>
     if (user) {
       loadTrades();
     }
-  }, [user, refreshTrigger]);
+  }, [user?.uid, refreshTrigger]);
 
   const loadTrades = async () => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const userTrades = await tradeService.getUserTrades(user.id);
+      const userTrades = await firebaseTradeService.getUserTrades(user.uid);
       setTrades(userTrades);
     } catch (error) {
       console.error('Error loading trades:', error);

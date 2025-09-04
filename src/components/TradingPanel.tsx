@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Search, TrendingUp, TrendingDown, ArrowUpDown, Loader2, AlertCircle, CreditCard, ExternalLink, CheckCircle, X } from 'lucide-react';
 import { marketDataService } from '../services/marketData';
-import { tradeService } from '../services/tradeService';
-import { walletService } from '../services/walletService';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { firebaseTradeService } from '../services/firebaseTradeService';
+import { firebaseWalletService } from '../services/firebaseWalletService';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
+import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface TradingPanelProps {
   onTrade?: (trade: any) => void;
@@ -20,7 +21,7 @@ interface SearchResult {
 }
 
 export const TradingPanel: React.FC<TradingPanelProps> = ({ onTrade }) => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<SearchResult | null>(null);
@@ -42,7 +43,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ onTrade }) => {
     if (user) {
       loadWalletBalance();
     }
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
     const searchAssets = async () => {
@@ -91,7 +92,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ onTrade }) => {
     
     setWalletLoading(true);
     try {
-      const wallet = await walletService.getUserWallet(user.id);
+      const wallet = await firebaseWalletService.getUserWallet(user.uid);
       setWalletBalance(wallet?.balance || 0);
     } catch (error) {
       console.error('Error loading wallet balance:', error);
@@ -129,22 +130,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ onTrade }) => {
     try {
       const totalCost = calculateTotal();
       
-      // Create a funding request notification for admin
-      const { error } = await supabase
-        .from('funding_requests')
-        .insert({
-          user_id: user.id,
-          user_email: user.email,
-          requested_amount: totalCost,
-          status: 'pending',
-          message: `User ${user.email} needs ${formatCurrency(totalCost)} to purchase ${quantity} shares of ${selectedAsset.symbol}. Current balance: ${formatCurrency(walletBalance)}, Shortfall: ${formatCurrency(totalCost - walletBalance)}`
-        });
-
-      if (error) {
-        console.error('Error creating funding request:', error);
-        setError('Failed to send funding request. Please try again.');
-        return;
-      }
+      // Create a Firebase funding request
+      await addDoc(collection(db, 'fundingRequests'), {
+        userId: user.uid,
+        userEmail: user.email,
+        requestedAmount: totalCost,
+        status: 'pending',
+        message: `User ${user.email} needs ${formatCurrency(totalCost)} to purchase ${quantity} shares of ${selectedAsset.symbol}. Current balance: ${formatCurrency(walletBalance)}, Shortfall: ${formatCurrency(totalCost - walletBalance)}`,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
 
       // Show success notification with proper styling
       setSuccess(`Funding request sent! An admin will contact you with deposit instructions to add ${formatCurrency(totalCost - walletBalance)} to your wallet.`);
@@ -174,7 +169,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ onTrade }) => {
       
       // Check wallet balance for buy orders
       if (tradeType === 'buy') {
-        const hasSufficientFunds = await walletService.checkSufficientFunds(user.id, totalCost);
+        const hasSufficientFunds = await firebaseWalletService.checkSufficientFunds(user.uid, totalCost);
         if (!hasSufficientFunds) {
           setShowFundingModal(true);
           setLoading(false);
@@ -182,7 +177,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({ onTrade }) => {
         }
       }
 
-      const result = await tradeService.executeTrade(user.id, {
+      const result = await firebaseTradeService.executeTrade(user.uid, {
         symbol: selectedAsset.symbol,
         name: selectedAsset.name,
         type: tradeType,

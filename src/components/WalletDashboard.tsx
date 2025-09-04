@@ -17,12 +17,13 @@ import {
   Info,
   X
 } from 'lucide-react';
-import { walletService } from '../services/walletService';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { firebaseWalletService } from '../services/firebaseWalletService';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
+import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export const WalletDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const [wallet, setWallet] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ export const WalletDashboard: React.FC = () => {
     if (user) {
       loadWalletData();
     }
-  }, [user]);
+  }, [user?.uid]);
 
   const loadWalletData = async () => {
     if (!user) return;
@@ -46,14 +47,14 @@ export const WalletDashboard: React.FC = () => {
     setError('');
     
     try {
-      // Get wallet
-      const userWallet = await walletService.getUserWallet(user.id);
+      // Get Firebase wallet
+      const userWallet = await firebaseWalletService.getUserWallet(user.uid);
       setWallet(userWallet);
       
       // If wallet exists, get transactions
       if (userWallet) {
         setTransactionsLoading(true);
-        const walletTransactions = await walletService.getWalletTransactions(userWallet.id);
+        const walletTransactions = await firebaseWalletService.getWalletTransactions(user.uid);
         setTransactions(walletTransactions);
         setTransactionsLoading(false);
       }
@@ -72,22 +73,16 @@ export const WalletDashboard: React.FC = () => {
     setError('');
 
     try {
-      // Create a funding request notification for admin
-      const { error } = await supabase
-        .from('funding_requests')
-        .insert({
-          user_id: user.id,
-          user_email: user.email,
-          requested_amount: parseFloat(requestAmount),
-          status: 'pending',
-          message: `User ${user.email} is requesting ${formatCurrency(parseFloat(requestAmount))} wallet funding`
-        });
-
-      if (error) {
-        console.error('Error creating funding request:', error);
-        setError('Failed to send funding request. Please try again.');
-        return;
-      }
+      // Create a Firebase funding request
+      await addDoc(collection(db, 'fundingRequests'), {
+        userId: user.uid,
+        userEmail: user.email,
+        requestedAmount: parseFloat(requestAmount),
+        status: 'pending',
+        message: `User ${user.email} is requesting ${formatCurrency(parseFloat(requestAmount))} wallet funding`,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
 
       // Show success notification with proper styling
       setSuccess(`Your funding request for ${formatCurrency(parseFloat(requestAmount))} has been submitted successfully! An admin will contact you with deposit instructions within 24 hours.`);

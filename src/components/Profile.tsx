@@ -21,11 +21,14 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
+import { userService } from '../services/userService';
+import { firebasePortfolioService } from '../services/firebasePortfolioService';
+import { firebaseWalletService } from '../services/firebaseWalletService';
+import { firebaseTradeService } from '../services/firebaseTradeService';
 
 export const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
@@ -42,25 +45,15 @@ export const Profile: React.FC = () => {
       loadProfileData();
       loadPortfolioStats();
     }
-  }, [user]);
+  }, [user?.uid]);
 
   const loadProfileData = async () => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
-        return;
-      }
-
-      setProfileData(data);
+      const profile = await userService.getUserProfile(user.uid);
+      setProfileData(profile);
     } catch (err) {
       console.error('Error loading profile:', err);
     } finally {
@@ -72,47 +65,22 @@ export const Profile: React.FC = () => {
     if (!user) return;
 
     try {
-      // Get portfolio holdings
-      const { data: holdings, error: holdingsError } = await supabase
-        .from('portfolio_holdings')
-        .select('*')
-        .eq('user_id', user.id);
+      const [assets, trades] = await Promise.all([
+        firebasePortfolioService.getUserPortfolio(user.uid),
+        firebaseTradeService.getUserTrades(user.uid)
+      ]);
 
-      if (holdingsError) {
-        console.error('Error loading holdings:', holdingsError);
-        return;
-      }
-
-      // Get trades count
-      const { data: trades, error: tradesError } = await supabase
-        .from('trades')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (tradesError) {
-        console.error('Error loading trades:', tradesError);
-        return;
-      }
-
-      // Calculate portfolio stats
-      const totalValue = holdings?.reduce((sum, holding) => 
-        sum + (holding.shares * holding.current_price), 0) || 0;
-      
-      const totalCost = holdings?.reduce((sum, holding) => 
-        sum + (holding.shares * holding.average_price), 0) || 0;
-      
+      const totalValue = assets.reduce((sum, asset) => sum + asset.value, 0);
+      const totalCost = assets.reduce((sum, asset) => sum + (asset.shares * (asset.value / asset.shares)), 0);
       const totalGain = totalValue - totalCost;
       const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
-      
-      const activeTrades = holdings?.length || 0;
-      const completedTrades = trades?.length || 0;
 
       setPortfolioStats({
         totalPortfolioValue: totalValue,
         totalGain,
         totalGainPercent,
-        activeTrades,
-        completedTrades,
+        activeTrades: assets.length,
+        completedTrades: trades.length,
       });
     } catch (err) {
       console.error('Error loading portfolio stats:', err);

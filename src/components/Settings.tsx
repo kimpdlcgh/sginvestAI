@@ -30,11 +30,11 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
+import { userService } from '../services/userService';
 
 export const Settings: React.FC = () => {
-  const { user, updatePassword } = useAuth();
+  const { user, updatePassword } = useFirebaseAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,49 +90,39 @@ export const Settings: React.FC = () => {
     if (user) {
       loadProfileData();
     }
-  }, [user]);
+  }, [user?.uid]);
 
   const loadProfileData = async () => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
-        setError('Failed to load profile data');
-        return;
-      }
-
-      if (data) {
+      const profile = await userService.getUserProfile(user.uid);
+      
+      if (profile) {
         setProfileData({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          middle_name: data.middle_name || '',
-          date_of_birth: data.date_of_birth || '',
-          gender: data.gender || '',
-          nationality: data.nationality || '',
-          primary_phone: data.primary_phone || '',
-          secondary_phone: data.secondary_phone || '',
-          whatsapp_number: data.whatsapp_number || '',
-          emergency_contact: data.emergency_contact || '',
-          language: data.language || 'English (US)',
-          timezone: data.timezone || 'America/New_York (EST)',
-          currency: data.currency || 'USD',
-          date_format: data.date_format || 'MM/DD/YYYY',
-          number_format: data.number_format || 'US',
-          week_start: data.week_start || 'Sunday',
-          risk_tolerance: data.risk_tolerance || '',
-          investment_experience: data.investment_experience || '',
-          investment_horizon: data.investment_horizon || '',
-          annual_income: data.annual_income || '',
-          net_worth: data.net_worth || '',
-          employment_status: data.employment_status || '',
+          first_name: profile.firstName || '',
+          last_name: profile.lastName || '',
+          middle_name: profile.middleName || '',
+          date_of_birth: profile.dateOfBirth || '',
+          gender: profile.gender || '',
+          nationality: profile.nationality || '',
+          primary_phone: profile.primaryPhone || '',
+          secondary_phone: profile.secondaryPhone || '',
+          whatsapp_number: profile.whatsappNumber || '',
+          emergency_contact: profile.emergencyContact || '',
+          language: profile.language || 'English (US)',
+          timezone: profile.timezone || 'America/New_York (EST)',
+          currency: profile.currency || 'USD',
+          date_format: profile.dateFormat || 'MM/DD/YYYY',
+          number_format: profile.numberFormat || 'US',
+          week_start: profile.weekStart || 'Sunday',
+          risk_tolerance: profile.riskTolerance || '',
+          investment_experience: profile.investmentExperience || '',
+          investment_horizon: profile.investmentHorizon || '',
+          annual_income: profile.annualIncome || '',
+          net_worth: profile.netWorth || '',
+          employment_status: profile.employmentStatus || '',
         });
       }
     } catch (err) {
@@ -151,18 +141,31 @@ export const Settings: React.FC = () => {
     setMessage('');
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          ...profileData,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        throw error;
-      }
+      await userService.updateUserProfile(user.uid, {
+        email: user.email!,
+        firstName: profileData.first_name,
+        lastName: profileData.last_name,
+        middleName: profileData.middle_name,
+        dateOfBirth: profileData.date_of_birth,
+        gender: profileData.gender,
+        nationality: profileData.nationality,
+        primaryPhone: profileData.primary_phone,
+        secondaryPhone: profileData.secondary_phone,
+        whatsappNumber: profileData.whatsapp_number,
+        emergencyContact: profileData.emergency_contact,
+        language: profileData.language,
+        timezone: profileData.timezone,
+        currency: profileData.currency,
+        dateFormat: profileData.date_format,
+        numberFormat: profileData.number_format,
+        weekStart: profileData.week_start,
+        riskTolerance: profileData.risk_tolerance,
+        investmentExperience: profileData.investment_experience,
+        investmentHorizon: profileData.investment_horizon,
+        annualIncome: profileData.annual_income,
+        netWorth: profileData.net_worth,
+        employmentStatus: profileData.employment_status,
+      });
 
       setMessage('Profile saved successfully!');
       setTimeout(() => setMessage(''), 3000);

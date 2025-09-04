@@ -11,7 +11,7 @@ import { WalletDashboard } from './WalletDashboard';
 import { AdminDashboard } from './AdminDashboard';
 import { Bell, Search, PieChart, TrendingUp, User, Shield, Wallet } from 'lucide-react';
 import { usePortfolioData } from '../hooks/usePortfolioData';
-import { useAuth } from '../hooks/useAuth';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
 import { 
   mockAIInsights, 
   mockMarketNews, 
@@ -23,7 +23,7 @@ interface TabContentProps {
 }
 
 export const TabContent: React.FC<TabContentProps> = ({ activeTab }) => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
   const { assets, portfolioStats, loading } = usePortfolioData();
   const chartData = generateChartData(30);
 

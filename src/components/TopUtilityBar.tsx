@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bell, Settings, User } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
 import logo from '../assets/logo.png';
 
 interface TopUtilityBarProps {
@@ -9,7 +9,7 @@ interface TopUtilityBarProps {
 }
 
 export const TopUtilityBar: React.FC<TopUtilityBarProps> = ({ activeTab, onTabChange }) => {
-  const { user } = useAuth();
+  const { user } = useFirebaseAuth();
 
   const utilityTabs = [
     { id: 'notifications', label: 'Notifications', icon: Bell },
