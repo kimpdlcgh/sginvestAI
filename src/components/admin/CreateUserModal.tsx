@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserPlus, Mail, Lock, DollarSign, Loader2 } from 'lucide-react';
-import { adminService } from '../../services/adminService';
+import { firebaseAdminService as adminService } from '../../services/firebaseAdminService';
 
 interface CreateUserModalProps {
   onClose: () => void;
