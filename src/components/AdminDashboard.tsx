@@ -20,7 +20,7 @@ import {
   Clock
 } from 'lucide-react';
 import { AdminStats, User, AdminOrder } from '../types/admin';
-import { adminService } from '../services/adminService';
+import { firebaseAdminService } from '../services/firebaseAdminService';
 import { UserManagement } from './admin/UserManagement';
 import { OrderManagement } from './admin/OrderManagement';
 import { WalletManagement } from './admin/WalletManagement';
@@ -53,9 +53,9 @@ export const AdminDashboard: React.FC = () => {
     setLoading(true);
     try {
       const [adminStats, allUsers, orders] = await Promise.all([
-        adminService.getAdminStats(),
-        adminService.getAllUsers(20),
-        adminService.getPendingOrders()
+        firebaseAdminService.getAdminStats(),
+        firebaseAdminService.getAllUsers(20),
+        firebaseAdminService.getPendingOrders()
       ]);
 
       setStats(adminStats);
@@ -64,7 +64,7 @@ export const AdminDashboard: React.FC = () => {
       
       // Load pending funding requests
       try {
-        const { data: fundingRequests } = await adminService.getPendingFundingRequests();
+        const { data: fundingRequests } = await firebaseAdminService.getPendingFundingRequests();
         setPendingFundingRequests(fundingRequests || []);
       } catch (error) {
         console.warn('Could not load funding requests:', error);

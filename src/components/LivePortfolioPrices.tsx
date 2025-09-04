@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, RefreshCw, Activity, DollarSign } from 'lucide-react';
 import { marketDataService } from '../services/marketData';
 import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 interface LivePrice {
   symbol: string;
@@ -39,15 +40,16 @@ export const LivePortfolioPrices: React.FC = () => {
       setLoading(true);
 
       // Get user's portfolio holdings
-      const { data: holdings, error } = await supabase
-        .from('portfolio_holdings')
-        .select('symbol, name, shares, average_price')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error loading holdings:', error);
-        return;
-      }
+      const holdingsQuery = query(
+        collection(db, 'portfolioHoldings'),
+        where('userId', '==', user.id)
+      );
+      
+      const holdingsSnapshot = await getDocs(holdingsQuery);
+      const holdings = holdingsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
       if (!holdings || holdings.length === 0) {
         setLivePrices([]);
@@ -61,7 +63,7 @@ export const LivePortfolioPrices: React.FC = () => {
         try {
           const quote = await marketDataService.getQuote(holding.symbol);
           const currentValue = holding.shares * quote.price;
-          const costBasis = holding.shares * holding.average_price;
+          const costBasis = holding.shares * holding.averagePrice;
           const gainLoss = currentValue - costBasis;
 
           return {
@@ -81,11 +83,11 @@ export const LivePortfolioPrices: React.FC = () => {
           return {
             symbol: holding.symbol,
             name: holding.name,
-            price: holding.average_price,
+            price: holding.averagePrice,
             change: 0,
             changePercent: 0,
             shares: holding.shares,
-            value: holding.shares * holding.average_price,
+            value: holding.shares * holding.averagePrice,
             gainLoss: 0,
             lastUpdated: new Date(),
           };

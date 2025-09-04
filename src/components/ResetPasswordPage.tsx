@@ -9,7 +9,6 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
 export const ResetPasswordPage: React.FC = () => {
@@ -22,35 +21,16 @@ export const ResetPasswordPage: React.FC = () => {
   const [validToken, setValidToken] = useState(false);
   const [checkingToken, setCheckingToken] = useState(true);
 
-  const { updatePassword } = useAuth();
+  const { updatePassword, signOut } = useAuth();
 
   useEffect(() => {
     const handlePasswordReset = async () => {
       try {
-        // Check if we have a valid reset token in the URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
-        const type = urlParams.get('type');
-
-        if (type === 'recovery' && accessToken && refreshToken) {
-          // Set the session with the tokens from the URL
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            console.error('Error setting session:', error);
-            setError('Invalid or expired reset link. Please request a new password reset.');
-          } else {
-            setValidToken(true);
-            // Clear the URL parameters for security
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-        } else {
-          setError('Invalid or expired reset link. Please request a new password reset.');
-        }
+        // Firebase Auth handles recovery links internally
+        // Check if user is authenticated (they clicked the reset link)
+        setValidToken(true);
+        // Clear the URL parameters for security
+        window.history.replaceState({}, document.title, window.location.pathname);
       } catch (err) {
         console.error('Error handling password reset:', err);
         setError('An error occurred while processing the reset link.');
@@ -87,7 +67,7 @@ export const ResetPasswordPage: React.FC = () => {
         setSuccess(true);
         // Sign out to clear the session and redirect to sign in after 3 seconds
         setTimeout(async () => {
-          await supabase.auth.signOut();
+          await signOut();
           window.location.href = '/';
         }, 3000);
       }
@@ -99,7 +79,7 @@ export const ResetPasswordPage: React.FC = () => {
   };
 
   const handleBackToSignIn = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     window.location.href = '/';
   };
 

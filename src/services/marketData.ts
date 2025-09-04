@@ -1,5 +1,3 @@
-import { supabase } from '../lib/supabase';
-
 interface QuoteData {
   symbol: string;
   price: number;
@@ -301,25 +299,6 @@ class MarketDataService {
       'NFLX': 'Netflix Inc.'
     };
     return names[symbol] || symbol;
-  }
-
-  // Method to check API status
-  getAPIStatus() {
-    const finnhubKey = import.meta.env.VITE_FINNHUB_API_KEY;
-    const alphaKey = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY;
-    
-    return {
-      finnhub: {
-        configured: !!(finnhubKey && finnhubKey !== 'your_finnhub_api_key'),
-        rateLimited: this.rateLimitReached.finnhub,
-        resetTime: this.rateLimitReached.resetTime
-      },
-      alphaVantage: {
-        configured: !!(alphaKey && alphaKey !== 'your_alpha_vantage_api_key'),
-        rateLimited: this.rateLimitReached.alphaVantage,
-        resetTime: this.rateLimitReached.resetTime
-      }
-    };
   }
 }
 
