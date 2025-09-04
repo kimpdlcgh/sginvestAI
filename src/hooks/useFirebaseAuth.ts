@@ -22,19 +22,29 @@ export const useFirebaseAuth = () => {
     // Initialize auth connection
     const initializeAuth = async () => {
       try {
-        // For production: verify connection to live Firebase
-        console.log('🔥 Connecting to Firebase Auth:', auth.config.apiKey ? 'Live Project' : 'Not configured');
-        
-        if (!auth.config.apiKey) {
-          console.error('❌ Firebase API key not configured. Check your .env file.');
+        // Verify Firebase configuration
+        const config = auth.app.options;
+        if (!config.apiKey || !config.projectId) {
+          console.error('❌ Firebase configuration incomplete. Check your .env file.');
           setLoading(false);
           return;
         }
         
-        console.log('✅ Firebase Auth initialized for project:', auth.app.options.projectId);
+        console.log('🔥 Connecting to Firebase project:', config.projectId);
+        
+        // Test connection to Firebase
+        const connectionTest = await testFirebaseConnection();
+        if (!connectionTest) {
+          console.error('❌ Cannot connect to Firebase. Check your internet connection and Firebase configuration.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ Firebase connection verified');
         setInitialized(true);
       } catch (error) {
-        console.error('❌ Firebase Auth initialization failed:', error);
+        console.error('❌ Firebase initialization failed:', error);
+        setLoading(false);
       }
     };
 

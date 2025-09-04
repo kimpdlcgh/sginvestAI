@@ -45,15 +45,19 @@ export const functions = getFunctions(app);
 // Production connection test
 export const testFirebaseConnection = async (): Promise<boolean> => {
   try {
+    console.log('🔍 Testing Firebase connection...');
+    
     // Test connection by checking auth state
     return new Promise((resolve) => {
       const unsubscribe = auth.onAuthStateChanged(() => {
+        console.log('✅ Firebase Auth connection successful');
         unsubscribe();
         resolve(true);
       });
       
       // Timeout after 10 seconds
       setTimeout(() => {
+        console.warn('⚠️ Firebase connection timeout');
         unsubscribe();
         resolve(false);
       }, 10000);
