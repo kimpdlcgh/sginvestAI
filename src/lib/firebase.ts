@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -37,52 +37,36 @@ if (getApps().length === 0) {
   app = getApps()[0];
 }
 
-// Initialize Firebase services
+// Initialize Firebase services for PRODUCTION use (no emulators)
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
 
-// Connect to emulators in development
-if (import.meta.env.DEV) {
-  try {
-    // Only connect to emulators if not already connected
-    if (!auth.config.emulator) {
-      connectAuthEmulator(auth, 'http://localhost:9099');
-    }
-    
-    if (!db._settings?.host?.includes('localhost')) {
-      connectFirestoreEmulator(db, 'localhost', 8080);
-    }
-    
-    if (!functions.customDomain?.includes('localhost')) {
-      connectFunctionsEmulator(functions, 'localhost', 5001);
-    }
-  } catch (error) {
-    // Emulators might already be connected
-    console.log('Firebase emulators connection info:', error.message);
-  }
-}
-
-// Test Firebase connection
+// Production connection test
 export const testFirebaseConnection = async (): Promise<boolean> => {
   try {
-    // Simple connectivity test by checking auth state
+    // Test connection by checking auth state
     return new Promise((resolve) => {
       const unsubscribe = auth.onAuthStateChanged(() => {
         unsubscribe();
         resolve(true);
       });
       
-      // Timeout after 5 seconds
+      // Timeout after 10 seconds
       setTimeout(() => {
         unsubscribe();
         resolve(false);
-      }, 5000);
+      }, 10000);
     });
   } catch (error) {
     console.error('Firebase connection test failed:', error);
     return false;
   }
 };
+
+// Log successful initialization
+console.log('🔥 Firebase initialized for production project:', firebaseConfig.projectId);
+console.log('📍 Auth domain:', firebaseConfig.authDomain);
+console.log('🗃️ Firestore project:', firebaseConfig.projectId);
 
 export default app;

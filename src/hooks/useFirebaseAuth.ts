@@ -7,7 +7,8 @@ import {
   sendPasswordResetEmail,
   updatePassword as firebaseUpdatePassword,
   onAuthStateChanged,
-  sendEmailVerification
+  sendEmailVerification,
+  connectAuthEmulator
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { userService } from '../services/userService';
@@ -15,15 +16,43 @@ import { userService } from '../services/userService';
 export const useFirebaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    // Initialize auth connection
+    const initializeAuth = async () => {
+      try {
+        // For production: verify connection to live Firebase
+        console.log('🔥 Connecting to Firebase Auth:', auth.config.apiKey ? 'Live Project' : 'Not configured');
+        
+        if (!auth.config.apiKey) {
+          console.error('❌ Firebase API key not configured. Check your .env file.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ Firebase Auth initialized for project:', auth.app.options.projectId);
+        setInitialized(true);
+      } catch (error) {
+        console.error('❌ Firebase Auth initialization failed:', error);
+      }
+    };
+
+    initializeAuth();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!initialized && !user) {
+        // Still initializing, don't process auth state changes yet
+        return;
+      }
+      
       setUser(user);
       
       // Create user profile if user exists but profile doesn't
       if (user && user.email) {
         try {
           await userService.ensureUserProfile(user.uid, user.email);
+          console.log('✅ User profile ensured for:', user.email);
         } catch (error) {
           console.error('Error creating user profile:', error);
         }
@@ -33,7 +62,7 @@ export const useFirebaseAuth = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [initialized]);</action>
 
   const signUp = async (email: string, password: string) => {
     try {
