@@ -13,8 +13,8 @@ import {
   User
 } from 'lucide-react';
 import { User as UserType, WalletTransaction } from '../../types/admin';
-import { adminService } from '../../services/adminService';
-import { walletService } from '../../services/walletService';
+import { firebaseAdminService as adminService } from '../../services/firebaseAdminService';
+import { firebaseWalletService as walletService } from '../../services/firebaseWalletService';
 
 interface WalletManagementProps {
   onRefresh: () => void;
