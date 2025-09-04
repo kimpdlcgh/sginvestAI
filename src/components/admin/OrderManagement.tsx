@@ -13,7 +13,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { AdminOrder } from '../../types/admin';
-import { adminService } from '../../services/adminService';
+import { firebaseAdminService as adminService } from '../../services/firebaseAdminService';
 
 interface OrderManagementProps {
   onRefresh: () => void;
